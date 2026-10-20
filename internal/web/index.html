@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Time Ranger — Screen Time Dashboard</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #0f172a;
+      color: #f8fafc;
+      margin: 0;
+      padding: 2rem;
+    }
+    .container { max-width: 1000px; margin: auto; }
+    h1 { font-size: 1.8rem; margin-bottom: 0.25rem; }
+    .subtitle { color: #94a3b8; font-size: 0.95rem; margin-bottom: 2rem; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+    }
+    .card {
+      background: #1e293b;
+      border-radius: 12px;
+      padding: 1.5rem;
+      border: 1px solid #334155;
+      cursor: pointer;
+      transition: border-color 0.2s, transform 0.2s;
+      text-decoration: none;
+      color: inherit;
+      display: block;
+    }
+    .card:hover {
+      border-color: #38bdf8;
+      transform: translateY(-2px);
+    }
+    .card h2 {
+      margin: 0 0 1rem 0;
+      font-size: 1.3rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .badge {
+      background: #0369a1;
+      color: #fff;
+      padding: 2px 10px;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-variant-numeric: tabular-nums;
+    }
+    .badge.green { background: #16a34a; }
+    .badge.yellow { background: #ca8a04; }
+    .badge.red { background: #dc2626; }
+    .meta { font-size: 0.8rem; color: #64748b; }
+    .nodes-section { margin-top: 2rem; }
+    .node-list { list-style: none; padding: 0; margin: 0; }
+    .node-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid #334155;
+      font-size: 0.9rem;
+    }
+    .node-item:last-child { border-bottom: none; }
+    .status-dot {
+      display: inline-block;
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      margin-right: 8px;
+    }
+    .status-dot.online { background: #22c55e; }
+    .status-dot.unknown { background: #64748b; }
+    .timestamp { font-size: 0.75rem; color: #64748b; margin-top: 2rem; text-align: center; }
+    
+    /* Table styles for user detail view */
+    .back-link {
+      display: inline-block;
+      margin-bottom: 1.5rem;
+      color: #38bdf8;
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .back-link:hover { text-decoration: underline; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #1e293b;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid #334155;
+      margin-top: 1rem;
+    }
+    th, td {
+      padding: 0.75rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid #334155;
+      font-size: 0.95rem;
+    }
+    th {
+      background: #0f172a;
+      color: #94a3b8;
+      font-weight: 600;
+    }
+    tr:last-child td { border-bottom: none; }
+  </style>
+</head>
+<body>
+  <div class="container" id="app">
+    <!-- Content injected dynamically based on URL hash/query -->
+  </div>
+
+  <script>
+    function escapeHtml(s) {
+      const d = document.createElement('div');
+      d.textContent = s;
+      return d.innerHTML;
+    }
+
+    function formatTime(iso) {
+      if (!iso) return 'never';
+      const d = new Date(iso);
+      return d.toLocaleString();
+    }
+
+    async function router() {
+      const hash = window.location.hash;
+      const app = document.getElementById('app');
+
+      if (hash.startsWith('#user=')) {
+        const username = decodeURIComponent(hash.substring(6));
+        await renderUserDetail(username, app);
+      } else {
+        renderDashboardShell(app);
+        loadDashboardData();
+      }
+    }
+
+    function renderDashboardShell(container) {
+      container.innerHTML = `
+        <h1>⏱️ Time Ranger</h1>
+        <p class="subtitle">
+          Screen time aggregator for <strong id="group-name">all users</strong>
+          &mdash; <span id="peer-count">0</span> peers connected
+        </p>
+
+        <div class="grid" id="users-grid"></div>
+
+        <div class="nodes-section">
+          <h2>🌐 Cluster Nodes</h2>
+          <ul class="node-list" id="nodes-list">
+            <li class="node-item" style="color:#64748b;">Waiting for peers...</li>
+          </ul>
+        </div>
+
+        <p class="timestamp" id="timestamp"></p>
+      `;
+    }
+
+    async function loadDashboardData() {
+      try {
+        const res = await fetch('/api/summary');
+        const data = await res.json();
+
+        const groupEl = document.getElementById('group-name');
+        const peerCountEl = document.getElementById('peer-count');
+        if (groupEl) groupEl.textContent = data.group || 'all users';
+        if (peerCountEl) peerCountEl.textContent = data.peers ? Object.keys(data.peers).length : 0;
+
+        const grid = document.getElementById('users-grid');
+        if (!grid) return;
+        grid.innerHTML = '';
+
+        const users = data.users || {};
+        const userNames = Object.keys(users).sort();
+        if (userNames.length === 0) {
+          grid.innerHTML = '<div class="card"><p style="color:#64748b;">No data yet. Waiting for the first collection cycle...</p></div>';
+        }
+        for (const user of userNames) {
+          const total = users[user];
+          let badgeClass = 'badge';
+          if (total.today_minutes > 480) badgeClass += ' red';
+          else if (total.today_minutes > 240) badgeClass += ' yellow';
+          else badgeClass += ' green';
+
+          const card = document.createElement('a');
+          card.className = 'card';
+          card.href = `#user=${encodeURIComponent(user)}`;
+          card.innerHTML = `
+            <h2>${escapeHtml(user)} <span class="${badgeClass}">${total.today_minutes.toFixed(1)}m today</span></h2>
+            <div style="font-size: 0.9rem; color: #cbd5e1; margin-bottom: 0.5rem;">
+              This week: <strong>${total.week_minutes.toFixed(1)}m</strong> &middot; Last week: <strong>${(total.last_week_minutes || 0).toFixed(1)}m</strong>
+            </div>
+            <div class="meta">${total.sources} machine(s) &middot; last seen ${formatTime(total.last_seen)}</div>
+          `;
+          grid.appendChild(card);
+        }
+
+        const nodesList = document.getElementById('nodes-list');
+        if (nodesList) {
+          nodesList.innerHTML = '';
+          const peers = data.peers || {};
+          const peerNames = Object.keys(peers).sort();
+          if (peerNames.length === 0) {
+            nodesList.innerHTML = '<li class="node-item" style="color:#64748b;">No peers discovered yet.</li>';
+          }
+          for (const id of peerNames) {
+            const addr = peers[id];
+            const li = document.createElement('li');
+            li.className = 'node-item';
+            li.innerHTML = `<span><span class="status-dot online"></span>${escapeHtml(id)}</span><span style="color:#94a3b8;">${escapeHtml(addr)}</span>`;
+            nodesList.appendChild(li);
+          }
+        }
+
+        const ts = document.getElementById('timestamp');
+        if (ts) ts.textContent = 'Last updated: ' + new Date().toLocaleString();
+      } catch (e) {
+        console.error('Refresh error:', e);
+      }
+    }
+
+    async function renderUserDetail(username, container) {
+      container.innerHTML = `
+        <a class="back-link" href="#">&larr; Back to Dashboard</a>
+        <h1>User Detail: ${escapeHtml(username)}</h1>
+        <p class="subtitle">Usage breakdown by day and machine</p>
+        <div id="detail-content" style="color:#94a3b8;">Loading detail...</div>
+      `;
+
+      try {
+        const res = await fetch(`/api/user?name=${encodeURIComponent(username)}`);
+        const data = await res.json();
+
+        const content = document.getElementById('detail-content');
+        const days = data.days || [];
+        const lastWeekDays = data.last_week_days || [];
+        const machines = data.machines || [];
+        const grid = data.grid || {};
+        const lastWeekGrid = data.last_week_grid || {};
+
+        if ((days.length === 0 && lastWeekDays.length === 0) || machines.length === 0) {
+          content.innerHTML = '<p>No data recorded for this user.</p>';
+          return;
+        }
+
+        function renderWeekTable(weekDays, weekGrid) {
+          if (!weekDays || weekDays.length === 0) {
+            return '<p style="color:#64748b;">No data recorded for this week.</p>';
+          }
+          let html = `<table><thead><tr><th>Date</th>`;
+          for (const m of machines) {
+            html += `<th>${escapeHtml(m)}</th>`;
+          }
+          html += `<th>Total</th></tr></thead><tbody>`;
+
+          let grandTotal = 0;
+          for (const day of weekDays) {
+            html += `<tr><td><strong>${escapeHtml(day)}</strong></td>`;
+            let dayTotal = 0;
+            for (const m of machines) {
+              const mins = (weekGrid[day] && weekGrid[day][m]) ? weekGrid[day][m] : 0;
+              dayTotal += mins;
+              html += `<td>${mins > 0 ? mins.toFixed(1) + 'm' : '-'}</td>`;
+            }
+            grandTotal += dayTotal;
+            html += `<td><strong>${dayTotal.toFixed(1)}m</strong></td></tr>`;
+          }
+
+          html += `</tbody><tfoot><tr style="border-top: 2px solid #475569; font-weight: bold; background: #0f172a;"><td>Weekly Total</td>`;
+          for (const m of machines) {
+            let mTotal = 0;
+            for (const day of weekDays) {
+              mTotal += (weekGrid[day] && weekGrid[day][m]) ? weekGrid[day][m] : 0;
+            }
+            html += `<td>${mTotal > 0 ? mTotal.toFixed(1) + 'm' : '-'}</td>`;
+          }
+          html += `<td>${grandTotal.toFixed(1)}m</td></tr></tfoot></table>`;
+          return html;
+        }
+
+        let contentHtml = `
+          <h2 style="font-size: 1.25rem; margin-top: 1.5rem; color: #38bdf8;">Current Week</h2>
+          ${renderWeekTable(days, grid)}
+
+          <div style="margin-top: 2.5rem; border-top: 1px solid #334155; padding-top: 1.5rem;">
+            <h2 style="font-size: 1.25rem; color: #94a3b8; margin-top: 0;">Last Week</h2>
+            ${renderWeekTable(lastWeekDays, lastWeekGrid)}
+          </div>
+        `;
+        content.innerHTML = contentHtml;
+      } catch (e) {
+        console.error('User detail error:', e);
+        document.getElementById('detail-content').innerHTML = '<p style="color:#ef4444;">Failed to load user detail.</p>';
+      }
+    }
+
+    window.addEventListener('hashchange', router);
+    router();
+    setInterval(() => {
+      if (!window.location.hash.startsWith('#user=')) {
+        loadDashboardData();
+      }
+    }, 10000);
+  </script>
+</body>
+</html>

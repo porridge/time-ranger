@@ -1,0 +1,58 @@
+root:x:0:0:root:/root:/bin/bash
+daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
+bin:x:2:2:bin:/bin:/usr/sbin/nologin
+sys:x:3:3:sys:/dev:/usr/sbin/nologin
+sync:x:4:65534:sync:/bin:/bin/sync
+games:x:5:60:games:/usr/games:/usr/sbin/nologin
+man:x:6:12:man:/var/cache/man:/usr/sbin/nologin
+lp:x:7:7:lp:/var/spool/lpd:/usr/sbin/nologin
+mail:x:8:8:mail:/var/mail:/usr/sbin/nologin
+news:x:9:9:news:/var/spool/news:/usr/sbin/nologin
+uucp:x:10:10:uucp:/var/spool/uucp:/usr/sbin/nologin
+proxy:x:13:13:proxy:/bin:/usr/sbin/nologin
+www-data:x:33:33:www-data:/var/www:/usr/sbin/nologin
+backup:x:34:34:backup:/var/backups:/usr/sbin/nologin
+list:x:38:38:Mailing List Manager:/var/list:/usr/sbin/nologin
+irc:x:39:39:ircd:/run/ircd:/usr/sbin/nologin
+gnats:x:41:41:Gnats Bug-Reporting System (admin):/var/lib/gnats:/usr/sbin/nologin
+nobody:x:65534:65534:nobody:/nonexistent:/usr/sbin/nologin
+messagebus:x:101:105::/var/run/dbus:/bin/false
+colord:x:102:106:colord colour management daemon,,,:/var/lib/colord:/bin/false
+usbmux:x:103:46:usbmux daemon,,,:/home/usbmux:/bin/false
+Debian-exim:x:104:112::/var/spool/exim4:/bin/false
+statd:x:105:65534::/var/lib/nfs:/bin/false
+avahi:x:106:115:Avahi mDNS daemon,,,:/var/run/avahi-daemon:/bin/false
+speech-dispatcher:x:108:29:Speech Dispatcher,,,:/var/run/speech-dispatcher:/bin/false
+hplip:x:109:7:HPLIP system user,,,:/var/run/hplip:/bin/false
+sshd:x:110:65534::/var/run/sshd:/usr/sbin/nologin
+rtkit:x:111:118:RealtimeKit,,,:/proc:/bin/false
+saned:x:112:119::/var/lib/saned:/bin/false
+Debian-gdm:x:113:120:Gnome Display Manager:/var/lib/gdm3:/bin/false
+porridge:x:1000:1000:Marcin Owsiany,,,:/srv/home/porridge:/bin/bash
+user1:x:1001:1001:User One,,,:/home/user1:/bin/bash
+user2:x:1002:1002:User Two,,,:/home/user2:/bin/bash
+nut:x:114:121::/var/lib/nut:/bin/false
+libvirt-qemu:x:115:122:Libvirt Qemu,,,:/var/lib/libvirt:/bin/false
+vde2-net:x:116:125::/var/run/vde2:/bin/false
+uuidd:x:100:101::/run/uuidd:/bin/false
+systemd-timesync:x:117:128:systemd Time Synchronization,,,:/run/systemd:/bin/false
+systemd-network:x:118:129:systemd Network Management,,,:/run/systemd/netif:/bin/false
+systemd-resolve:x:119:130:systemd Resolver,,,:/run/systemd/resolve:/bin/false
+geoclue:x:121:132::/var/lib/geoclue:/bin/false
+dnsmasq:x:122:65534:dnsmasq,,,:/var/lib/misc:/bin/false
+_apt:x:123:65534::/nonexistent:/bin/false
+tss:x:120:134:TPM2 software stack,,,:/var/lib/tpm:/bin/false
+_rpc:x:124:65534::/run/rpcbind:/usr/sbin/nologin
+systemd-coredump:x:999:999:systemd Core Dumper:/:/usr/sbin/nologin
+testuser:x:1003:1003:Test User,,,:/home/testuser:/bin/bash
+Debian-minetest:x:125:60:Minetest dedicated server,,,:/var/games/minetest-server:/usr/sbin/nologin
+tcpdump:x:126:137::/nonexistent:/usr/sbin/nologin
+netdata:x:998:998::/var/lib/netdata:/bin/sh
+timidity:x:127:138:TiMidity++ MIDI sequencer service:/etc/timidity:/usr/sbin/nologin
+polkitd:x:997:997:polkit:/nonexistent:/usr/sbin/nologin
+fwupd-refresh:x:128:142:fwupd-refresh user,,,:/run/systemd:/usr/sbin/nologin
+gnome-initial-setup:x:129:65534::/run/gnome-initial-setup/:/bin/false
+avahi-autoipd:x:107:116:Avahi autoip daemon,,,:/var/lib/avahi-autoipd:/usr/sbin/nologin
+cups-pk-helper:x:130:107:user for cups-pk-helper service:/nonexistent:/usr/sbin/nologin
+gnome-remote-desktop:x:993:993:GNOME Remote Desktop:/var/lib/gnome-remote-desktop:/usr/sbin/nologin
+_timeranger:x:992:992:Time Ranger Daemon:/:/usr/sbin/nologin
