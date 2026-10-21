@@ -1,0 +1,85 @@
+.TH TIME-RANGER 1 "October 2026" "time-ranger 0.1.0" "User Commands"
+.SH NAME
+time-ranger \- distributed screen time aggregator for LAN
+.SH SYNOPSIS
+.B time-ranger
+.SH DESCRIPTION
+.B time-ranger
+is a Go daemon that monitors screen time for users in a Unix group,
+gossips state across LAN peers via mDNS and HTTP, and serves a real-time
+dashboard on a configurable port.
+.PP
+All configuration is done through environment variables (see
+.B ENVIRONMENT
+below); the daemon takes no command line arguments.
+.PP
+At startup the daemon creates its data directory if needed (default:
+the current directory) and starts collecting screen time information for
+the monitored group, querying the
+.B timekpra
+CLI provided by
+.BR timekpr-next (1).
+.PP
+It then serves:
+.TP
+.B Dashboard
+A web UI with per-user and per-node statistics, listening on the loopback
+interface only (default port 4848), and its JSON API:
+.RS
+.IP \fB/api/summary\fR
+Aggregated today's totals per user.
+.IP \fB/api/user?name=\fIuser\fR
+Detailed screen time for a single user over the last week.
+.RE
+.TP
+.B Peer gossip
+An mTLS-protected HTTP endpoint used for anti-entropy synchronization with
+other nodes on the LAN.  This is disabled unless a CA is configured (see
+.BR TIME_RANGER_CA
+below).  When enabled, peers are discovered via mDNS on
+.IR _time-ranger._tcp .
+.PP
+The daemon reacts to
+.B SIGTERM
+and
+.B SIGINT
+and shuts down gracefully.
+.SH ENVIRONMENT
+.TP
+.B TIME_RANGER_GROUP
+Unix group to monitor.  If empty, the first ten seemingly non-system
+users from
+.BR getent (1)
+are used.
+.TP
+.B TIME_RANGER_UI_PORT
+TCP port for the dashboard (default 4848, bound to localhost only).
+.TP
+.B TIME_RANGER_PEER_PORT
+TCP port for peer communication/gossip (default 4849).  Publicly
+accessible and protected with mTLS; only effective when
+.B TIME_RANGER_CA
+is set.
+.TP
+.B TIME_RANGER_CA
+Path(s) to CA cert/key PEM file(s), comma separated.  When set, the peer
+port is enabled with mutual TLS and gossip between nodes is used.
+.TP
+.B TIME_RANGER_DATA
+Directory used to store persistent screen time data (default: the
+current directory).
+.SH FILES
+.TP
+.I %DATA%
+Daily flat files recording screen time for each monitored user.  The data
+directory is controlled by
+.BR TIME_RANGER_DATA
+above (for the packaged service it is
+.IR /var/lib/time-ranger ).
+.SH SEE ALSO
+.BR timekpr-next (1),
+.BR systemctl (1),
+.BR getent (1)
+.PP
+The dashboard can be opened at
+.IR http://localhost:4848 .
